@@ -148,12 +148,12 @@
 
 .btn-outline {
   background: transparent;
-  color: var(--primary, #2d3748);
+  color: var(--btn-outline-text, #f2f2f2);
   border: 1px solid var(--primary, #2d3748);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: rgba(45, 55, 72, 0.08);
+  background: rgb(0, 0, 0);
 }
 
 .textarea {
