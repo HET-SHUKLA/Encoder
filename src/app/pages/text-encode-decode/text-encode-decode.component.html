@@ -1,0 +1,78 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Text Encode / Decode</h1>
+    <p class="subtitle">
+      Encode or decode text using a secret string and a number. All processing is done in your browser.
+      Tabs, spaces, and line breaks are preserved so markdown and code keep their format.
+    </p>
+  </header>
+
+  <section class="options card">
+    <h2>Secret &amp; Number</h2>
+    <div class="form-row">
+      <label for="secret">Secret (string)</label>
+      <input
+        id="secret"
+        type="text"
+        [value]="secret()"
+        (input)="onSecretChange($any($event.target).value)"
+        placeholder="Enter your secret string"
+        autocomplete="off"
+      />
+    </div>
+    <div class="form-row">
+      <label for="number">Number</label>
+      <input
+        id="number"
+        type="number"
+        [value]="number() ?? ''"
+        (input)="onNumberChange($any($event.target).value)"
+        placeholder="Enter a number"
+      />
+    </div>
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+  </section>
+
+  <section class="io-section">
+    <div class="card text-panel">
+      <div class="panel-header">
+        <h2>Input</h2>
+        <div class="actions">
+          <button type="button" class="btn btn-primary" (click)="encode()">Encode</button>
+          <button type="button" class="btn btn-secondary" (click)="decode()">Decode</button>
+        </div>
+      </div>
+      <textarea
+        class="textarea"
+        [value]="inputText()"
+        (input)="onInputChange($any($event.target).value)"
+        placeholder="Paste or type text here (tabs and spaces are preserved)..."
+        rows="14"
+        spellcheck="false"
+      ></textarea>
+    </div>
+
+    <div class="card text-panel">
+      <div class="panel-header">
+        <h2>Output</h2>
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="copyOutput()"
+          [disabled]="!outputText()"
+        >
+          Copy
+        </button>
+      </div>
+      <textarea
+        class="textarea output"
+        [value]="outputText()"
+        readonly
+        placeholder="Result will appear here..."
+        rows="14"
+      ></textarea>
+    </div>
+  </section>
+</div>

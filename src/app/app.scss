@@ -1,0 +1,23 @@
+:host {
+  --nav-bg: #1a1a2e;
+  --nav-text: #eaeaea;
+  --text-primary: #1a1a2e;
+  --text-secondary: #555;
+  --card-bg: #fff;
+  --border: #e8e8e8;
+  --input-bg: #fff;
+  --primary: #2d3748;
+  --primary-hover: #1a202c;
+  --focus: #4a90d9;
+  --error: #c53030;
+  --output-bg: #f5f5f5;
+  --placeholder: #999;
+  --muted: #888;
+  --secondary: #e2e8f0;
+  --secondary-hover: #cbd5e0;
+}
+
+.main {
+  min-height: calc(100vh - 56px);
+  background: var(--page-bg, #f0f2f5);
+}
