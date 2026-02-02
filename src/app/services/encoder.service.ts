@@ -5,62 +5,65 @@ import { Injectable } from '@angular/core';
  * Preserves all whitespace (tab, space, newline, carriage return) so that
  * markdown, code indentation, and formatting are maintained.
  */
+/** UTF-16 surrogate range: invalid when standalone, shows as */
+const SURROGATE_LOW = 0xd800;
+const SURROGATE_HIGH = 0xdfff;
+/** Private Use Area: safe to store remapped surrogates (same size: 2048) */
+const REMAP_BASE = 0xe000;
+
 @Injectable({ providedIn: 'root' })
 export class EncoderService {
-  /** Character codes we preserve: tab, newline, carriage return, space */
-  private static readonly WHITESPACE_CODES = new Set([9, 10, 13, 32]);
+  // ===== seed from string + number =====
+private createSeed(key: string, num: number): number {
+  let hash = num | 0;
 
-  private static isWhitespace(code: number): boolean {
-    return EncoderService.WHITESPACE_CODES.has(code);
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
   }
 
-  /**
-   * Builds a deterministic key stream from secret and number for XOR.
-   * Uses secret characters and number to generate values 0..65535 for each position.
-   */
-  private buildKeyStream(length: number, secret: string, number: number): number[] {
-    const keyStream: number[] = [];
-    const slen = secret.length;
-    for (let i = 0; i < length; i++) {
-      const base = slen > 0 ? secret.charCodeAt(i % slen) : 0;
-      keyStream.push((base + number * (i + 1)) & 0xffff);
-    }
-    return keyStream;
+  return hash;
+}
+
+// ===== tiny deterministic PRNG =====
+private prng(seed: number) {
+  return () => {
+    seed ^= seed << 13;
+    seed ^= seed >>> 17;
+    seed ^= seed << 5;
+    return seed >>> 0;
+  };
+}
+
+// ===== core byte transform =====
+private transformBytes(data: Uint8Array, key: string, num: number): Uint8Array {
+  if (!key || num === undefined || num === null)
+    throw new Error("Missing key or number");
+
+  const rand = this.prng(this.createSeed(key, num));
+  const out = new Uint8Array(data.length);
+
+  for (let i = 0; i < data.length; i++) {
+    out[i] = data[i] ^ (rand() & 0xff);
   }
 
-  /**
-   * Encodes text using secret and number. All tabs, spaces, and newlines are preserved.
-   */
-  encode(text: string, secret: string, number: number): string {
-    const count = this.nonWhitespaceCount(text);
-    const keyStream = this.buildKeyStream(count, secret, number);
-    let keyIndex = 0;
-    let result = '';
-    for (let i = 0; i < text.length; i++) {
-      const code = text.charCodeAt(i);
-      if (EncoderService.isWhitespace(code)) {
-        result += text[i];
-      } else {
-        const key = keyStream[keyIndex++] ?? 0;
-        result += String.fromCharCode((code ^ key) & 0xffff);
-      }
-    }
-    return result;
-  }
+  return out;
+}
 
-  /**
-   * Decodes text that was encoded with the same secret and number.
-   * Decoding is the same as encoding (XOR is self-inverse); whitespace is preserved.
-   */
-  decode(text: string, secret: string, number: number): string {
-    return this.encode(text, secret, number);
-  }
+// ===== public API =====
+encode(text: string, key: string, num: number): string {
+  if (!text) throw new Error("Missing text");
 
-  private nonWhitespaceCount(text: string): number {
-    let count = 0;
-    for (let i = 0; i < text.length; i++) {
-      if (!EncoderService.isWhitespace(text.charCodeAt(i))) count++;
-    }
-    return count;
-  }
+  const bytes = new TextEncoder().encode(text);
+  const encoded = this.transformBytes(bytes, key, num);
+
+  return btoa(String.fromCharCode(...encoded));
+}
+
+decode(encoded: string, key: string, num: number): string {
+  const raw = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
+  const decoded = this.transformBytes(raw, key, num);
+
+  return new TextDecoder().decode(decoded);
+}
+
 }
